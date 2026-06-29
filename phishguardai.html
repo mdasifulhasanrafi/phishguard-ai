@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhishGuard AI: Dynamic Phishing Detection Simulator</title>
+  <style>
+    /* Reset & Theme Configuration */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Consolas', 'Fira Code', 'Monaco', 'Courier New', monospace, sans-serif;
+    }
+
+    :root {
+      --bg-space: #060913;
+      --bg-panel: #0d1222;
+      --bg-header: #131a31;
+      --border-cyber: #1e294b;
+      --neon-cyan: #00f0ff;
+      --neon-cyan-glow: rgba(0, 240, 255, 0.35);
+      --neon-green: #00ff66;
+      --neon-green-glow: rgba(0, 255, 102, 0.3);
+      --neon-red: #ff0055;
+      --neon-red-glow: rgba(255, 0, 85, 0.3);
+      --neon-purple: #8b5cf6;
+      --neon-purple-glow: rgba(139, 92, 246, 0.35);
+      --text-main: #e2e8f0;
+      --text-muted: #64748b;
+    }
+
+    body {
+      background-color: var(--bg-space);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Scanline overlay effect */
+    body::before {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      z-index: 9999;
+      pointer-events: none;
+      background-size: 100% 4px;
+      opacity: 0.15;
+    }
+
+    .app-container {
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    /* Header Components */
+    header {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      fill: var(--neon-cyan);
+      filter: drop-shadow(0 0 8px var(--neon-cyan-glow));
+    }
+
+    .brand h1 {
+      font-size: 1.6rem;
+      letter-spacing: 1px;
+      font-weight: 800;
+      text-transform: uppercase;
+      background: linear-gradient(to right, var(--neon-cyan), var(--neon-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.25));
+    }
+
+    .brand-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Cybersecurity Interface Panels */
+    .panel {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-cyber);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.65);
+      padding: 30px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .panel-cyber-edge {
+      border-top: 4px solid var(--neon-cyan);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.08), 0 10px 40px rgba(0, 0, 0, 0.65);
+    }
+
+    /* Welcome and Setup Configuration Screen */
+    .screen-overlay {
+      text-align: center;
+    }
+
+    .overlay-title {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .overlay-desc {
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 25px;
+      font-size: 0.95rem;
+    }
+
+    .badge-icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .badge-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Difficulty Setup UI */
+    .selector-container {
+      margin-bottom: 25px;
+      text-align: left;
+    }
+
+    .selector-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--neon-cyan);
+      margin-bottom: 12px;
+      display: block;
+      border-left: 2px solid var(--neon-cyan);
+      padding-left: 10px;
+    }
+
+    .difficulty-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 12px;
+    }
+
+    .btn-diff {
+      background-color: var(--bg-header);
+      border: 1px solid var(--border-cyber);
+      color: var(--text-muted);
+      padding: 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+    }
+
+    .btn-diff:hover {
+      border-color: var(--neon-cyan);
+      color: var(--text-main);
+    }
+
+    .btn-diff.selected[data-diff="easy"] {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      box-shadow: 0 0 10px var(--neon-green-glow);
+    }
+
+    .btn-diff.selected[data-diff="medium"] {
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+      box-shadow: 0 0 10px var(--neon-cyan-glow);
+    }
+
+    .btn-diff.selected[data-diff="hard"] {
+      border-color: var(--neon-red);
+      color: var(--neon-red);
+      box-shadow: 0 0 10px var(--neon-red-glow);
+    }
+
+    .btn-diff.selected[data-diff="mixed"] {
+      border-color: var(--neon-purple);
+      color: var(--neon-purple);
+      box-shadow: 0 0 10px var(--neon-purple-glow);
+    }
+
+    .welcome-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    /* Info directives banner links */
+    .btn-info-toggle {
+      background-color: transparent;
+      border: 1px dashed var(--neon-purple);
+      color: var(--neon-purple);
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-info-toggle:hover {
+      background-color: rgba(139, 92, 246, 0.05);
+      border-color: var(--neon-purple);
+      color: #c084fc;
+      box-shadow: 0 0 10px var(--neon-purple-glow);
+    }
+
+    /* Standard Interactive Buttons */
+    .btn-start, .btn-restart {
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      border: none;
+      color: #020617;
+      font-weight: 800;
+      padding: 16px 35px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-start:hover, .btn-restart:hover {
+      box-shadow: 0 0 20px var(--neon-cyan-glow);
+      transform: translateY(-1px);
+    }
+
+    /* Active Game Components */
+    .game-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 5px;
+      background-color: var(--bg-header);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+      transition: width 0.3s ease;
+    }
+
+    /* Simulated Email Client UI */
+    .email-container {
+      background-color: #080c18;
+      border: 1px solid var(--border-cyber);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .email-window-bar {
+      background-color: var(--bg-header);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-cyber);
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 6px;
+    }
+
+    .window-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .wd-red { background-color: #f43f5e; }
+    .wd-yellow { background-color: #eab308; }
+    .wd-green { background-color: #10b981; }
+
+    .window-title {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: monospace;
+    }
+
+    /* Category Badging on UI [9] */
+    .category-badge {
+      font-size: 0.72rem;
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid var(--border-cyber);
+    }
+
+    /* Unique Category Colors [9] */
+    .cat-banking { border-color: #fbbf24; color: #fbbf24; background: rgba(251, 191, 36, 0.05); }
+    .cat-government { border-color: #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.05); }
+    .cat-social { border-color: #ec4899; color: #ec4899; background: rgba(236, 72, 153, 0.05); }
+    .cat-university { border-color: #14b8a6; color: #14b8a6; background: rgba(20, 184, 166, 0.05); }
+    .cat-delivery { border-color: #f97316; color: #f97316; background: rgba(249, 115, 22, 0.05); }
+    .cat-workplace { border-color: #a855f7; color: #a855f7; background: rgba(168, 85, 247, 0.05); }
+
+    .email-headers {
+      padding: 15px;
+      background-color: rgba(19, 26, 49, 0.5);
+      border-bottom: 1px solid var(--border-cyber);
+      font-size: 0.85rem;
+    }
+
+    .header-row {
+      display: flex;
+      margin-bottom: 6px;
+    }
+    .header-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .header-label {
+      width: 80px;
+      font-weight: 600;
+      color: var(--neon-cyan);
+    }
+
+    .header-value {
+      flex: 1;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .email-body {
+      padding: 20px;
+      min-height: 180px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+      background-color: #070911;
+    }
+
+    .email-body p {
+      margin-bottom: 12px;
+    }
+
+    .game-link {
+      color: #38bdf8;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    /* Link Inspector Sub-Panel */
+    .link-inspector {
+      background-color: #0f172a;
+      padding: 12px 15px;
+      border-top: 1px solid var(--border-cyber);
+      font-size: 0.78rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .inspector-title {
+      font-family: monospace;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .inspector-url {
+      font-family: monospace;
+      color: var(--neon-green);
+      word-break: break-all;
+    }
+
+    /* Action Controls */
+    .action-container {
+      display: flex;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-legit {
+      background-color: transparent;
+      border: 2px solid var(--neon-green);
+      color: var(--neon-green);
+    }
+
+    .btn-legit:hover:not(:disabled) {
+      background-color: rgba(0, 255, 102, 0.08);
+      box-shadow: 0 0 15px var(--neon-green-glow);
+    }
+
+    .btn-phish {
+      background-color: transparent;
+      border: 2px solid var(--neon-red);
+      color: var(--neon-red);
+    }
+
+    .btn-phish:hover:not(:disabled) {
+      background-color: rgba(255, 0, 85, 0.08);
+      box-shadow: 0 0 15px var(--neon-red-glow);
+    }
+
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* Feedback Panels */
+    .feedback-panel {
+      margin-top: 20px;
+      border-radius: 8px;
+      padding: 20px;
+      display: none;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .feedback-correct {
+      background-color: rgba(0, 255, 102, 0.05);
+      border: 1px solid var(--neon-green);
+    }
+
+    .feedback-incorrect {
+      background-color: rgba(255, 0, 85, 0.05);
+      border: 1px solid var(--neon-red);
+    }
+
+    .feedback-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .feedback-title.correct { color: var(--neon-green); }
+    .feedback-title.incorrect { color: var(--neon-red); }
+
+    .feedback-text {
+      font-size: 0.88rem;
+      line-height: 1.5;
+      margin-bottom: 15px;
+      color: var(--text-main);
+    }
+
+    .btn-next {
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      border: none;
+      color: #020617;
+      font-weight: 800;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      float: right;
+    }
+
+    .btn-next:hover {
+      box-shadow: 0 0 10px var(--neon-cyan-glow);
+    }
+
+    .clearfix::after {
+      content: "";
+      clear: both;
+      display: table;
+    }
+
+    /* Statistics Displays on Final Screen [7] */
+    .final-score-display {
+      font-size: 4rem;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      margin: 10px 0;
+      font-family: monospace;
+      text-shadow: 0 0 15px var(--neon-cyan-glow);
+    }
+
+    .stat-box {
+      background-color: var(--bg-header);
+      border: 1px solid var(--border-cyber);
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+      text-align: left;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      border-bottom: 1px dashed #1e294b;
+      padding-bottom: 8px;
+    }
+
+    .stat-row:last-child {
+      margin-bottom: 0;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      font-weight: bold;
+      font-family: monospace;
+    }
+
+    .rating-banner {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .rating-beginner { color: #f87171; }
+    .rating-safe { color: #facc15; }
+    .rating-aware { color: #60a5fa; }
+    .rating-expert { color: var(--neon-green); }
+
+    /* Modal Styling [11] */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(2, 6, 23, 0.85);
+      z-index: 99999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background-color: var(--bg-panel);
+      border: 2px solid var(--neon-purple);
+      box-shadow: 0 0 30px var(--neon-purple-glow);
+      max-width: 650px;
+      width: 100%;
+      border-radius: 12px;
+      padding: 30px;
+      max-height: 85vh;
+      overflow-y: auto;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .modal-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-cyber);
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+
+    .modal-hdr h3 {
+      font-size: 1.25rem;
+      color: var(--neon-purple);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .modal-close:hover {
+      color: var(--neon-red);
+    }
+
+    .modal-section {
+      margin-bottom: 18px;
+    }
+
+    .modal-section h4 {
+      font-size: 0.95rem;
+      color: var(--neon-cyan);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      border-left: 2px solid var(--neon-cyan);
+      padding-left: 8px;
+    }
+
+    .modal-section p, .modal-section li {
+      font-size: 0.82rem;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .modal-section ul {
+      padding-left: 20px;
+    }
+
+    /* Footer [12] */
+    footer {
+      text-align: center;
+      padding: 25px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-cyber);
+      margin-top: 25px;
+    }
+
+    /* Keyframes */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Media Queries for Mobile Responsiveness */
+    @media (max-width: 640px) {
+      .app-container { padding: 10px; }
+      .panel { padding: 20px; }
+      .brand h1 { font-size: 1.2rem; }
+      .final-score-display { font-size: 3rem; }
+      .difficulty-group { grid-template-columns: repeat(2, 1fr); }
+      .action-container { flex-direction: column; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <div class="brand">
+        <!-- Technical Badge SVG Icon -->
+        <svg class="brand-logo" viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM12 7a2 2 0 0 1 2 2c0 1.2-.8 2-2 2a2 2 0 0 1-2-2c0-1.1.9-2 2-2zm-3 8c0-1.5 2-2.5 3-2.5s3 1 3 2.5v1H9v-1z"/>
+        </svg>
+        <h1 id="app-title">PhishGuard AI: Dynamic Phishing Detection Simulator</h1>
+      </div>
+      <div class="brand-sub" id="app-subtitle">AI-Powered Cybersecurity Training Simulator</div>
+    </header>
+
+    <main>
+      <!-- Welcome / Setup Screen -->
+      <div id="screen-welcome" class="panel panel-cyber-edge screen-overlay">
+        <div class="badge-icon">
+          <!-- Cyber Shield Vector -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00f0ff" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
+        <h2 class="overlay-title">Initialize Training Cycle</h2>
+        <p class="overlay-desc">
+          Identify and quarantine advanced spear-phishing attempts. Analyze real UK-centric organization systems, evaluate email headers, inspect embedded links, and flag deceptive communications.
+        </p>
+
+        <!-- Difficulty Configuration Selection -->
+        <div class="selector-container">
+          <span class="selector-title">Select Operational Difficulty</span>
+          <div class="difficulty-group">
+            <button class="btn-diff selected" data-diff="easy">Easy</button>
+            <button class="btn-diff" data-diff="medium">Medium</button>
+            <button class="btn-diff" data-diff="hard">Hard</button>
+            <button class="btn-diff" data-diff="mixed">Mixed</button>
+          </div>
+        </div>
+
+        <div class="welcome-actions">
+          <button class="btn-start" onclick="game.start()">Begin Core Simulation</button>
+          <button class="btn-info-toggle" onclick="ui.toggleInfoModal(true)">Open Intelligence Briefing</button>
+        </div>
+      </div>
+
+      <!-- Active Gameboard -->
+      <div id="screen-game" class="panel panel-cyber-edge" style="display: none;">
+        <div class="game-meta">
+          <span id="label-progress">SCENARIO 0 OF 10</span>
+          <!-- Category Badge Display [9] -->
+          <span id="label-category" class="category-badge cat-banking">BANKING</span>
+          <span id="label-score">SCORE: 0/0</span>
+        </div>
+        <div class="progress-bar-container">
+          <div id="progress-bar" class="progress-bar-fill"></div>
+        </div>
+
+        <!-- Simulated Email Client Layout -->
+        <div class="email-container">
+          <div class="email-window-bar">
+            <div class="window-controls">
+              <div class="window-dot wd-red"></div>
+              <div class="window-dot wd-yellow"></div>
+              <div class="window-dot wd-green"></div>
+            </div>
+            <span class="window-title">SEC_MAIL_INBOX_PARSER_v4.1</span>
+            <span id="email-difficulty-badge" style="font-size:0.68rem; color:var(--text-muted); font-family:monospace; font-weight:bold; border: 1px dashed var(--border-cyber); padding: 1px 6px; border-radius: 4px;">EASY</span>
+          </div>
+          <div class="email-headers">
+            <div class="header-row">
+              <span class="header-label">From:</span>
+              <span id="email-sender" class="header-value">loading...</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">To:</span>
+              <span class="header-value">security-champion@enterprise-gateway.co.uk</span>
+            </div>
+            <div class="header-row">
+              <span class="header-label">Subject:</span>
+              <span id="email-subject" class="header-value" style="font-weight: bold; color: #fff;">loading...</span>
+            </div>
+          </div>
+          <div id="email-body" class="email-body">
+            <!-- Dynamic compilation body contents -->
+          </div>
+          <!-- Real-Time Link Inspector [10] -->
+          <div id="link-inspector" class="link-inspector">
+            <span class="inspector-title">🔎 Link Inspector:</span>
+            <span id="inspector-url" class="inspector-url">None detected</span>
+          </div>
+        </div>
+
+        <!-- Player Actions -->
+        <div class="action-container">
+          <button id="btn-choice-legit" class="btn btn-legit" onclick="game.submitAnswer(false)">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            Legitimate
+          </button>
+          <button id="btn-choice-phish" class="btn btn-phish" onclick="game.submitAnswer(true)">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            Phishing
+          </button>
+        </div>
+
+        <!-- Immediate Assessment Panel -->
+        <div id="feedback-panel" class="feedback-panel clearfix">
+          <div class="feedback-title" id="feedback-title">Assessment Panel</div>
+          <div class="feedback-text" id="feedback-desc">Analyzing...</div>
+          <button class="btn-next" onclick="game.nextQuestion()">
+            Continue
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-8.29-1.42 1.42L16.86 11H5v2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Game Over / Evaluation Report [7] -->
+      <div id="screen-summary" class="panel panel-cyber-edge screen-overlay" style="display: none;">
+        <div class="badge-icon">
+          <!-- Final Assessment Shield -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00ff66" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <h2 class="overlay-title">Analysis Completed</h2>
+        <p class="overlay-desc">Operational safety parameters processed.</p>
+        
+        <div class="final-score-display" id="summary-score">0 / 10</div>
+        <div class="rating-banner" id="summary-rating">SECURITY EXPERT</div>
+        
+        <!-- Tabular Game Session Stats [7] -->
+        <div class="stat-box">
+          <div class="stat-row">
+            <span class="stat-label">Legitimate emails correctly identified:</span>
+            <span id="stat-legit" class="stat-val">0 / 0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Phishing emails correctly identified:</span>
+            <span id="stat-phish" class="stat-val">0 / 0</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Analytical Accuracy:</span>
+            <span id="stat-accuracy" class="stat-val" style="color:var(--neon-cyan)">0.0%</span>
+          </div>
+        </div>
+        
+        <button class="btn-restart" onclick="game.start()">Re-initialize Cycle</button>
+      </div>
+    </main>
+
+    <!-- Info/Intelligence Modal [11] -->
+    <div id="info-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-hdr">
+          <h3>Intelligence Briefing: Cybersecurity Directive</h3>
+          <button class="modal-close" onclick="ui.toggleInfoModal(false)">&times;</button>
+        </div>
+        <div class="modal-section">
+          <h4>What is Phishing?</h4>
+          <p>
+            Phishing is a social engineering attack mechanism where adversaries impersonate reliable entities to deceive targets into providing credentials, executing malicious attachments, or authorizing wire payments.
+          </p>
+        </div>
+        <div class="modal-section">
+          <h4>Common Threat Indicators</h4>
+          <ul>
+            <li><strong>Lookalike Domains (Typosquatting)</strong>: Domains mimicking trusted entities but containing subtle spelling variations (e.g., <code>barclays-security-update.com</code> instead of <code>barclays.co.uk</code>).</li>
+            <li><strong>Coerced Urgency or Panic</strong>: Pressure statements demanding immediate actions within specific timeframes to bypass rational validation checks.</li>
+            <li><strong>Credential Collection Links</strong>: Links routing to unauthenticated credential collection forms, external storage accounts, or unofficial cloud apps (like <code>.xyz</code>, <code>.online</code>, or <code>.net</code>).</li>
+            <li><strong>Generic Sign-offs</strong>: Lack of specific recipient identification tags or using generic designations like "Valued Client".</li>
+          </ul>
+        </div>
+        <div class="modal-section">
+          <h4>Verification Checklist</h4>
+          <p>
+            Check the sender's actual root domain, not just their display name. Verify link targets by hovering or inspecting the raw URL in the browser's status bar before interacting.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Developed for educational purposes to improve cybersecurity awareness. // COMPLIANT WITH OFFLINE SECURITY STANDARDS
+    </footer>
+  </div>
+
+  <script>
+    // System Organization Variables mapped to exact specifications [3]
+    const ORGS = {
+      BANKING: [
+        { name: "Barclays", domain: "barclays.co.uk" },
+        { name: "HSBC", domain: "hsbc.co.uk" },
+        { name: "Lloyds Bank", domain: "lloydsbank.com" },
+        { name: "Santander UK", domain: "santander.co.uk" }
+      ],
+      UNIVERSITY: [
+        { name: "LSBU IT Services", domain: "lsbu.ac.uk" },
+        { name: "University of London IT", domain: "london.ac.uk" },
+        { name: "Imperial College IT Support", domain: "imperial.ac.uk" },
+        { name: "King's College London IT", domain: "kcl.ac.uk" }
+      ],
+      DELIVERY: [
+        { name: "Royal Mail", domain: "royalmail.com" },
+        { name: "Amazon Logistics", domain: "amazon.co.uk" },
+        { name: "DPD UK", domain: "dpd.co.uk" },
+        { name: "Evri", domain: "evri.com" }
+      ],
+      SOCIAL: [
+        { name: "Instagram", domain: "instagram.com" },
+        { name: "Facebook", domain: "facebook.com" },
+        { name: "LinkedIn", domain: "linkedin.com" },
+        { name: "Microsoft Account", domain: "microsoft.com" }
+      ],
+      GOVERNMENT: [
+        { name: "HM Revenue & Customs", domain: "gov.uk" },
+        { name: "DVLA", domain: "gov.uk" },
+        { name: "NHS", domain: "nhs.net" },
+        { name: "GOV.UK", domain: "gov.uk" }
+      ],
+      WORKPLACE: [
+        { name: "Enterprise Gateway Hub", domain: "enterprise-gateway.co.uk" },
+        { name: "Microsoft Cloud Identity", domain: "microsoft.com" },
+        { name: "Global HR Services", domain: "payroll-processing-uk.com" },
+        { name: "SharePoint Central", domain: "sharepointonline.com" }
+      ]
+    };
+
+    // Blueprint Database Expanded to 36 Templates [4, 8, 9]
+    // Consists of 12 Easy, 12 Medium, 12 Hard Blueprints
+    const BLUEPRINTS = [
+      // ================= EASY BLUEPRINTS (12) =================
+      {
+        id: 1,
+        category: "GOVERNMENT",
+        difficulty: "easy",
+        isPhishing: true,
+        subject: "HMRC TAX REFUND AVAILABLE: CLAIM {AMOUNT} NOW",
+        sender: "hmrc-tax-refund-office-refund-portal-{CODE}@{ENTITY_LOWERCASE}-free-payment.xyz",
+        body: "Dear Customer,<br><br>We have concluded an electronic tax assessment of your financial profiles. You are owed a cumulative tax rebate of {AMOUNT} for the fiscal period.<br><br>Authorize deposit instantly to your active debit/credit card by visiting the portal link below:<br><br><a class='game-link' data-link='http://claim-your-hmrc-tax-refund-here-{CODE}.xyz'>http://claim-your-hmrc-tax-refund-here-{CODE}.xyz</a><br><br>Do not ignore this notice, files expire in 24 hours.",
+        explanation: "Phishing Attempt. Indicators: 1) Overly urgent title and unexpected financial rebate payout. 2) Sent from a suspicious .xyz non-governmental domain. 3) Routes to an unauthenticated external URL instead of the official 'gov.uk' infrastructure.",
+        link: "http://claim-your-hmrc-tax-refund-here-{CODE}.xyz"
+      },
+      {
+        id: 2,
+        category: "GOVERNMENT",
+        difficulty: "easy",
+        isPhishing: false,
+        subject: "Your Personal Income Tax coding notice has changed",
+        sender: "noreply@hmrc.gov.uk",
+        body: "Hello,<br><br>This is an automated notification from HM Revenue & Customs. An updated adjustment has been applied to your Income Tax code for this financial year.<br><br>To protect your financial security, details are not sent via email. Please type our official gateway address (<strong>gov.uk</strong>) directly into your web browser, log in securely to your personal tax account, and navigate to your tax notices. We never include direct sign-on links in system email notifications.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Uses the official government root domain (gov.uk). 2) Advises the recipient to navigate manually to the website, containing no links or direct credential requests.",
+        link: "None (Direct navigation requested)"
+      },
+      {
+        id: 3,
+        category: "DELIVERY",
+        difficulty: "easy",
+        isPhishing: true,
+        subject: "ALERT: Your delivery {TRACKING} was HELD due to unpaid {AMOUNT}",
+        sender: "courier-holding-hub-{CODE}@{ENTITY_LOWERCASE}-parcel-unpaid-redelivery.xyz",
+        body: "Attention Client,<br><br>Your parcel {TRACKING} was stopped at our sorting hub because of an outstanding handling charge of {AMOUNT}.<br><br>Please confirm credit payment instantly to enable delivery routing tomorrow:<br><br><a class='game-link' data-link='https://{ENTITY_LOWERCASE}-redeliveries-handling-fees.xyz/pay'>https://{ENTITY_LOWERCASE}-redeliveries-handling-fees.xyz/pay</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Demands payment for a package using high urgency. 2) The sender and hyperlinked destination domains are unregistered, using a suspicious .xyz top-level domain.",
+        link: "https://{ENTITY_LOWERCASE}-redeliveries-handling-fees.xyz/pay"
+      },
+      {
+        id: 4,
+        category: "DELIVERY",
+        difficulty: "easy",
+        isPhishing: false,
+        subject: "Tracking Update: Package #{TRACKING} is scheduled for delivery today",
+        sender: "updates@{DOMAIN}",
+        body: "Good morning,<br><br>Your package with tracking number #{TRACKING} is currently loaded on our van and will be delivered between {TIME} and 17:00 today. <br><br>You can track the progress of your courier on our interactive tracking map. No further action or pending fees are attached to this delivery.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official domain of the delivery service. 2) Requires zero payment, credential entry, or high-pressure personal information updates.",
+        link: "None"
+      },
+      {
+        id: 5,
+        category: "BANKING",
+        difficulty: "easy",
+        isPhishing: true,
+        subject: "!!! URGENT !!! Your {ENTITY} Online Access is SUSPENDED",
+        sender: "security-alert-department-910@{ENTITY_LOWERCASE}-secure-bank-login-online-now.click",
+        body: "Dear Customer,<br><br>Unusual activity was observed on your {ENTITY} profile on {DATE} from an IP address in {LOCATION}. <br><br>We have locked security access to prevent funds loss. Unblock your accounts instantly by logging in to confirm your identity:<br><br><a class='game-link' data-link='http://{ENTITY_LOWERCASE}-identity-verification-portal.click/login'>http://{ENTITY_LOWERCASE}-identity-verification-portal.click/login</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Extreme urgency and intimidation ('SUSPENDED', 'locked access'). 2) Uses a highly suspicious non-banking top-level domain (.click). 3) Demands complete credential sign-on through an unauthenticated link.",
+        link: "http://{ENTITY_LOWERCASE}-identity-verification-portal.click/login"
+      },
+      {
+        id: 6,
+        category: "BANKING",
+        difficulty: "easy",
+        isPhishing: false,
+        subject: "Security Notification: New device login alert",
+        sender: "alerts@{DOMAIN}",
+        body: "Hello,<br><br>We detected a new login to your {ENTITY} account from a Chrome browser on a mobile device on {DATE} at {TIME} near {LOCATION}.<br><br>If this was you, you do not need to take action. If you did not recognize this login, please open your official {ENTITY} mobile application or go to our official domain <strong>{DOMAIN}</strong> to change your security credentials.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Uses the official domain of the financial institution. 2) Directs users to change credentials safely via their pre-installed app or manual site navigation.",
+        link: "None"
+      },
+      {
+        id: 7,
+        category: "WORKPLACE",
+        difficulty: "easy",
+        isPhishing: true,
+        subject: "OVERDUE ACCOUNT INVOICE #{TRACKING} - Urgent Payment of {AMOUNT} Required",
+        sender: "billing-finance-invoice-notices@{CODE}-invoice-processing-services.xyz",
+        body: "Attention Accounts Payable,<br><br>Your invoice #{TRACKING} for services rendered is now {CODE} days past due. The outstanding balance of {AMOUNT} is outstanding.<br><br>View and authorize prompt payment directly below to avoid additional interest charges:<br><br><a class='game-link' data-link='http://download-your-invoice-attachment-here-{CODE}.xyz/file'>http://download-your-invoice-attachment-here-{CODE}.xyz/file</a>",
+        explanation: "Phishing Attempt. Indicators: 1) High financial pressure combined with threat of fees. 2) Unprompted invoice alert from an unverified third-party company. 3) Target link goes to a suspicious .xyz file-sharing website.",
+        link: "http://download-your-invoice-attachment-here-{CODE}.xyz/file"
+      },
+      {
+        id: 8,
+        category: "WORKPLACE",
+        difficulty: "easy",
+        isPhishing: false,
+        subject: "Confirmation of your Microsoft subscription renewal",
+        sender: "billing@microsoft.com",
+        body: "Dear User,<br><br>This is a payment receipt confirming your annual subscription for Microsoft 365 Personal has been successfully renewed. Your card on file has been charged {AMOUNT}. <br><br>If you need to view your billing history or adjust subscription options, please manage your account securely at your dashboard: <strong>account.microsoft.com/services</strong>.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official Microsoft corporate domain. 2) Uses standard transactional notification formatting without pushing credentials harvesting fields directly.",
+        link: "None"
+      },
+      {
+        id: 9,
+        category: "SOCIAL",
+        difficulty: "easy",
+        isPhishing: true,
+        subject: "URGENT Security Alert: Your {ENTITY} account will be DELETED in 12 hours",
+        sender: "support-team-security-review-center-819@{ENTITY_LOWERCASE}-meta-support-portal-system.online",
+        body: "Dear User,<br><br>We detected a policy violation on your {ENTITY} profile on {DATE}. Due to legal terms, your account is scheduled for permanent deletion in 12 hours.<br><br>If you believe this was an error, file a secure appeal immediately here:<br><br><a class='game-link' data-link='https://{ENTITY_LOWERCASE}-helpdesk-appeals-infringement.online/case'>https://{ENTITY_LOWERCASE}-helpdesk-appeals-infringement.online/case</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Extreme artificial urgency ('DELETED in 12 hours'). 2) Threat of account suspension. 3) The link target uses a non-official '.online' subdomain masking as security support.",
+        link: "https://{ENTITY_LOWERCASE}-helpdesk-appeals-infringement.online/case"
+      },
+      {
+        id: 10,
+        category: "SOCIAL",
+        difficulty: "easy",
+        isPhishing: false,
+        subject: "{CODE} is your {ENTITY} security verification code",
+        sender: "no-reply@mail.{DOMAIN}",
+        body: "Hi,<br><br>We received a request to log in to your {ENTITY} account from a new location near {LOCATION}.<br><br>Use this security code to verify your session:<br><br><strong style='font-size: 20px; letter-spacing: 2px;'>{CODE}</strong><br><br>This code is only active for 15 minutes. If you did not request this login code, we recommend changing your account security password immediately.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from a verified subdomain of the social media provider. 2) Contains only a system verification code and does not prompt you to click on external verification forms.",
+        link: "None"
+      },
+      {
+        id: 11,
+        category: "UNIVERSITY",
+        difficulty: "easy",
+        isPhishing: true,
+        subject: "Tuition Fee Summons: Unpaid academic fees of {AMOUNT} - Suspension Alert",
+        sender: "finance-accounting-office-kcl-edu-administration@{ENTITY_LOWERCASE}-university-fees-payment-portal.net",
+        body: "Attention student,<br><br>Our audit records indicate an unpaid balance of tuition fees totaling {AMOUNT} is registered on your university profile.<br><br>To avoid immediate enrollment cancellation and suspension of your campus login keys, please pay the outstanding tuition fees now:<br><br><a class='game-link' data-link='http://{ENTITY_LOWERCASE}-tuition-payment-gateway-{CODE}.net/pay'>http://{ENTITY_LOWERCASE}-tuition-payment-gateway-{CODE}.net/pay</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Strong coercive language (suspension of university campus access). 2) Sender address uses a '.net' lookalike domain. Real UK universities operate strictly on academic '.ac.uk' domains.",
+        link: "http://{ENTITY_LOWERCASE}-tuition-payment-gateway-{CODE}.net/pay"
+      },
+      {
+        id: 12,
+        category: "UNIVERSITY",
+        difficulty: "easy",
+        isPhishing: false,
+        subject: "System Announcement: Upgrade of Campus Wireless Network",
+        sender: "it-announcements@{DOMAIN}",
+        body: "Dear Campus Members,<br><br>Please be advised that the central wireless network database will undergo a hardware upgrade this weekend on {DATE} from 02:00 to 06:00 BST.<br><br>During this period, Wi-Fi connectivity across campus halls may be intermittent. As a standard reminder, our central IT Service Desk will never request your passwords or authentication codes via email.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official academic (.ac.uk) server domain. 2) Contains no links, requests for credentials, or push actions.",
+        link: "None"
+      },
+
+      // ================= MEDIUM BLUEPRINTS (12) =================
+      {
+        id: 13,
+        category: "WORKPLACE",
+        difficulty: "medium",
+        isPhishing: true,
+        subject: "[Teams] {NAME} invited you to join a critical corporate meeting",
+        sender: "teams-noreply-communications-{CODE}@teams-microsoft-meeting-invitation.com",
+        body: "Hello,<br><br>You have been added to a critical business operations video briefing by {NAME}.<br><br><strong>Topic:</strong> {PAYROLL_MONTH} Corporate Restructure Plans<br><strong>Time:</strong> Today at {TIME} BST<br><br>To register and access the encrypted lobby stream, sign in with your corporate credential pass below:<br><br><a class='game-link' data-link='https://microsoft-teams-meeting-join-{CODE}.com/auth'>https://microsoft-teams-meeting-join-{CODE}.com/auth</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Exploits workplace stress ('Restructure plans'). 2) Sender uses a generic corporate lookalike domain (.com instead of official microsoft.com). 3) Directs you to input credentials to access an external web portal.",
+        link: "https://microsoft-teams-meeting-join-{CODE}.com/auth"
+      },
+      {
+        id: 14,
+        category: "WORKPLACE",
+        difficulty: "medium",
+        isPhishing: false,
+        subject: "Missed activity notification in Microsoft Teams",
+        sender: "noreply@teams.microsoft.com",
+        body: "Hi there,<br><br>Your team members are trying to contact you in Microsoft Teams. You have missed messages from {NAME}.<br><br>Click the link below to open Microsoft Teams and catch up on the activity:<br><br><a class='game-link' data-link='https://teams.microsoft.com/_#/conversations'>https://teams.microsoft.com/_#/conversations</a>",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Uses the exact, official root-level Microsoft Teams domain (teams.microsoft.com). 2) Serves as a standard notifications redirect to the official app space.",
+        link: "https://teams.microsoft.com/_#/conversations"
+      },
+      {
+        id: 15,
+        category: "GOVERNMENT",
+        difficulty: "medium",
+        isPhishing: true,
+        subject: "Penalty Charge Notice: Overdue vehicle tax fine of {AMOUNT}",
+        sender: "dvla-penalty-charge-notices-administration@dvla-gov-uk-payments.org",
+        body: "Warning,<br><br>Your vehicle was flagged as operating on public highways without valid vehicle licensing tax. A penalty fee of {AMOUNT} has been registered against your profile.<br><br>To resolve this penalty and avoid prosecution or vehicle seizure, pay the fee directly:<br><br><a class='game-link' data-link='https://dvla-gov-uk-penalty-enforcement.org/pay'>https://dvla-gov-uk-penalty-enforcement.org/pay</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Relies on legal fear and intimidation. 2) The sender address ends in '.org', which is highly suspicious for a UK government agency. Government agencies strictly use '.gov.uk'.",
+        link: "https://dvla-gov-uk-penalty-enforcement.org/pay"
+      },
+      {
+        id: 16,
+        category: "GOVERNMENT",
+        difficulty: "medium",
+        isPhishing: false,
+        subject: "Your vehicle tax is due for registration ending in {TRACKING}",
+        sender: "no-reply@dvla.gov.uk",
+        body: "Dear Registered Keeper,<br><br>Our records show that your vehicle licensing tax is due to expire on the first of next month. <br><br>You can renew your vehicle tax online quickly by navigating to the official DVLA site at <strong>www.gov.uk/vehicle-tax</strong> and entering the reference number from your V11 reminder document.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official and validated government domain (dvla.gov.uk). 2) Standard reminder directing users to use their physical paperwork reference on the official gov.uk web portal.",
+        link: "None"
+      },
+      {
+        id: 17,
+        category: "BANKING",
+        difficulty: "medium",
+        isPhishing: true,
+        subject: "MFA SECURITY ALERT: Approve pending profile device integration",
+        sender: "security-approvals-{CODE}@santander-security-approval-uk-portal.com",
+        body: "Dear Customer,<br><br>A request has been initiated to link a new mobile device to your banking account from {LOCATION} on {DATE}. <br><br>If this was not you, you must decline this authorization and block the device integration immediately:<br><br><a class='game-link' data-link='https://santander-bank-uk-security-approval.com/device-auth'>https://santander-bank-uk-security-approval.com/device-auth</a><br><br>Unverified devices will receive access to your funds after 1 hour.",
+        explanation: "Phishing Attempt. Indicators: 1) Highly deceptive multi-factor authentication fatigue attempt. 2) The sender and destination URLs are lookalike domains (santander-bank-uk-security-approval.com instead of santander.co.uk).",
+        link: "https://santander-bank-uk-security-approval.com/device-auth"
+      },
+      {
+        id: 18,
+        category: "BANKING",
+        difficulty: "medium",
+        isPhishing: false,
+        subject: "Direct Debit Instruction: Setup Confirmation",
+        sender: "alerts.hsbc@hsbc.co.uk",
+        body: "Dear Customer,<br><br>We are writing to confirm that a new Direct Debit instruction has been successfully established on your current account ending in *{CODE}.<br><br><strong>Originator Reference:</strong> {TRACKING}<br><strong>Payment Amount:</strong> {AMOUNT} (recurring)<br><br>If you authorized this setup, you do not need to take action. If this is unexpected, please log in to your official HSBC online banking page or call our helpdesk on the verified number printed on your bank card.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Uses a correct transactional domain (hsbc.co.uk). 2) Advises standard secure verification processes instead of including unsafe login links in the email body.",
+        link: "None"
+      },
+      {
+        id: 19,
+        category: "WORKPLACE",
+        difficulty: "medium",
+        isPhishing: true,
+        subject: "{NAME} shared '{PAYROLL_MONTH}_Salary_Review.xlsx' on OneDrive",
+        sender: "sharepoint-noreply-services@{CODE}-onedrive-secure-document-sharing-cloud.com",
+        body: "Hi,<br><br>{NAME} from Human Resources has uploaded an updated Excel sheet to your enterprise folder:<br><br>📁 <strong>{PAYROLL_MONTH}_Salary_Review.xlsx</strong><br><br>To view this file securely online, authenticate using your Active Directory login credentials:<br><br><a class='game-link' data-link='https://onedrive-sharepoint-document-portal.com/login'>https://onedrive-sharepoint-document-portal.com/login</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Uses sensitive payroll lures ('Salary Review') to bypass critical thinking. 2) The link target goes to a malicious credential collection page mimicking a Microsoft SharePoint link.",
+        link: "https://onedrive-sharepoint-document-portal.com/login"
+      },
+      {
+        id: 20,
+        category: "WORKPLACE",
+        difficulty: "medium",
+        isPhishing: false,
+        subject: "{NAME} shared '{PAYROLL_MONTH}_Report.docx' with you",
+        sender: "no-reply@sharepointonline.com",
+        body: "Hello,<br><br>{NAME} has shared a document with you via SharePoint.<br><br>📄 <strong>{PAYROLL_MONTH}_Report.docx</strong><br><br>You can access this shared resource by clicking below:<br><br><a class='game-link' data-link='https://imperial-my.sharepoint.com/personal/report-review-file'>https://imperial-my.sharepoint.com/personal/report-review-file</a>",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official automated SharePoint notification domain (no-reply@sharepointonline.com). 2) The document link leads to a valid enterprise tenant on sharepoint.com.",
+        link: "https://imperial-my.sharepoint.com/personal/report-review-file"
+      },
+      {
+        id: 21,
+        category: "UNIVERSITY",
+        difficulty: "medium",
+        isPhishing: true,
+        subject: "IT HELP DESK: Your university password expires today",
+        sender: "helpdesk-service-alert@{ENTITY_LOWERCASE}-it-portal-verification-service.com",
+        body: "Dear Campus Member,<br><br>Your active login password for your university network and IT services is scheduled to expire in 4 hours.<br><br>Please keep your current active credentials valid by completing the validation step below:<br><br><a class='game-link' data-link='https://{ENTITY_LOWERCASE}.it-portal-verification-service.com/reset'>https://{ENTITY_LOWERCASE}.it-portal-verification-service.com/reset</a><br><br>Failure to verify will lock access to library files and campus email.",
+        explanation: "Phishing Attempt. Indicators: 1) Urgent timeline designed to prevent verification. 2) Uses a lookalike domain ending in '.com' instead of the authentic UK academic '.ac.uk' address space of the university.",
+        link: "https://{ENTITY_LOWERCASE}.it-portal-verification-service.com/reset"
+      },
+      {
+        id: 22,
+        category: "UNIVERSITY",
+        difficulty: "medium",
+        isPhishing: false,
+        subject: "Overdue Library Notice: Urgent action required",
+        sender: "library-notifications@{DOMAIN}",
+        body: "Dear Student,<br><br>This is an automated notification from our library tracking system. You have outstanding materials past their return dates:<br><br>• <strong>ISBN-{CODE}: Advanced Cybersecurity Engineering</strong><br><br>To avoid administrative fines, please return this book or renew it by logging into your student account directly at <strong>www.{DOMAIN}</strong> using your standard student portal credentials.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official university academic domain (.ac.uk). 2) No clickable links are present in the text; it advises logging directly into your existing dashboard.",
+        link: "None"
+      },
+      {
+        id: 23,
+        category: "DELIVERY",
+        difficulty: "medium",
+        isPhishing: true,
+        subject: "DPD / Evri: Failed Delivery Update for parcel #{TRACKING}",
+        sender: "tracking-updates-service-{CODE}@dpd-parcel-delivery-redirection.com",
+        body: "Hello,<br><br>We were unable to deliver your package #{TRACKING} today because your confirmed delivery address was incomplete.<br><br>Please update your address details and select a new redelivery window here:<br><br><a class='game-link' data-link='https://dpd-delivery-redirection-uk.com/address'>https://dpd-delivery-redirection-uk.com/address</a><br><br>Your parcel will be returned to the sender if not verified within 48 hours.",
+        explanation: "Phishing Attempt. Indicators: 1) Leverages convenient redelivery lures. 2) Uses a highly suspicious lookalike domain (dpd-delivery-redirection-uk.com) to collect personal address and credit card details.",
+        link: "https://dpd-delivery-redirection-uk.com/address"
+      },
+      {
+        id: 24,
+        category: "DELIVERY",
+        difficulty: "medium",
+        isPhishing: false,
+        subject: "Your parcel #{TRACKING} is arriving today",
+        sender: "tracking@evri.com",
+        body: "Hi,<br><br>Your parcel from our merchant partner is out for delivery today. It will be delivered by your local courier between 13:00 and 15:00 BST. <br><br>If you would like to divert this parcel to an Evri ParcelShop or update your safe-place delivery instructions, please search our official tracking page at <strong>www.evri.com/track</strong> with tracking ID: {TRACKING}.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the genuine company domain (evri.com). 2) Guides users to their official, secure web address to manage tracking credentials manually.",
+        link: "None"
+      },
+
+      // ================= HARD BLUEPRINTS (12) =================
+      {
+        id: 25,
+        category: "WORKPLACE",
+        difficulty: "hard",
+        isPhishing: true,
+        subject: "URGENT ACTION: Validate your payroll banking updates for {PAYROLL_MONTH}",
+        sender: "hr-payroll-notifications-uk@{CODE}-payroll-processing-uk.com",
+        body: "Attention Staff Member,<br><br>Our centralized payroll division has processed banking routing file adjustments for {PAYROLL_MONTH}. Please verify that your banking details on file are correct to avoid payroll deposit failures this month.<br><br>Access and review your current bank configurations instantly on our employee workspace:<br><br><a class='game-link' data-link='https://hr-portal-payroll-updates-uk.com/login'>https://hr-portal-payroll-updates-uk.com/login</a><br><br>Changes must be validated before {DATE} at 17:00 BST.",
+        explanation: "Phishing Attempt. This is a highly targeted spear-phishing simulation. Indicators: 1) Mimics internal HR departments. 2) Uses a lookalike domain (payroll-processing-uk.com) to bypass gateway checks and capture credentials.",
+        link: "https://hr-portal-payroll-updates-uk.com/login"
+      },
+      {
+        id: 26,
+        category: "WORKPLACE",
+        difficulty: "hard",
+        isPhishing: false,
+        subject: "Your digital payslip is ready for {PAYROLL_MONTH}",
+        sender: "no-reply@adp-payslips-uk.com",
+        body: "Hello Employee,<br><br>Your electronic payslip for the month of {PAYROLL_MONTH} has been processed and is now available to view online. <br><br>To view your secure payslip, please open your corporate web browser, navigate to your enterprise SSO portal page, and select 'ADP Payroll Services'. Do not share your login credentials with anyone.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the authentic enterprise payroll provider platform. 2) Standard notification telling you to log in securely through your internal SSO portal without providing external, suspicious hyperlinks.",
+        link: "None"
+      },
+      {
+        id: 27,
+        category: "GOVERNMENT",
+        difficulty: "hard",
+        isPhishing: true,
+        subject: "NHS Portal: Apply for your updated NHS Health & Access Card",
+        sender: "noreply-digital-services-{CODE}@nhs-uk-medical-health-services.com",
+        body: "Dear Citizen,<br><br>Under the updated public health guidelines, you are entitled to claim an updated NHS Health & Access card.<br><br>This card provides express access to medical prescriptions and diagnostic reports across NHS clinics. Please verify your details and pay a delivery fee of £4.99 to receive your card:<br><br><a class='game-link' data-link='https://nhs-uk-healthpass-application.com/verify'>https://nhs-uk-healthpass-application.com/verify</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Exploits healthcare trust (NHS). 2) The NHS never issues unprompted digital/physical 'Health Passes' via SMS or email links. 3) Uses an external non-government lookalike domain (.com instead of nhs.uk or nhs.net).",
+        link: "https://nhs-uk-healthpass-application.com/verify"
+      },
+      {
+        id: 28,
+        category: "GOVERNMENT",
+        difficulty: "hard",
+        isPhishing: false,
+        subject: "NHS Appointment Confirmation: GP Checkup on {DATE}",
+        sender: "noreply@nhs.net",
+        body: "Hello,<br><br>This is an automated notification from your GP health service. Your upcoming medical consultation has been confirmed:<br><br><strong>Location:</strong> Local Health Clinic<br><strong>Date:</strong> {DATE}<br><strong>Time:</strong> {TIME}<br><br>If you need to reschedule or cancel this appointment, please call the practice telephone line directly. Do not reply to this automated text-alert box.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Uses the official NHS network root email server (nhs.net). 2) Contains only appointment details with no links or prompts for credentials.",
+        link: "None"
+      },
+      {
+        id: 29,
+        category: "BANKING",
+        difficulty: "hard",
+        isPhishing: true,
+        subject: "URGENT SECURITY NOTICE: Update your {ENTITY} Corporate Authenticator settings",
+        sender: "commercial-security-hub-{CODE}@{ENTITY_LOWERCASE}-secure-online-commercial-banking.com",
+        body: "Dear Business Partner,<br><br>We are upgrading our centralized security authentication parameters for all online business profiles on {DATE}. <br><br>To prevent immediate system disruption of commercial transactions, please update your cryptographic digital key on your security card:<br><br><a class='game-link' data-link='https://{ENTITY_LOWERCASE}-commercial-banking-authentication-uk.com'>https://{ENTITY_LOWERCASE}-commercial-banking-authentication-uk.com</a><br><br>This update is mandatory.",
+        explanation: "Phishing Attempt. Highly convincing spear-phishing simulation. Indicators: 1) Exploits business continuity anxiety. 2) Directs users to a highly sophisticated typosquatted login domain mimicking commercial channels.",
+        link: "https://{ENTITY_LOWERCASE}-commercial-banking-authentication-uk.com"
+      },
+      {
+        id: 30,
+        category: "BANKING",
+        difficulty: "hard",
+        isPhishing: false,
+        subject: "URGENT: Transaction validation request on card *{CODE}",
+        sender: "fraudalert@santander.co.uk",
+        body: "Dear Customer,<br><br>We detected an unusual card payment of {AMOUNT} to an online merchant on your card ending in *{CODE} at {TIME} on {DATE}.<br><br>To protect your account, we have placed a temporary block on your card. Please call our dedicated fraud unit on the number printed on the reverse of your physical credit card to verify this transaction. We will never ask you to click a link to verify card codes.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the genuine financial domain. 2) Expressly guides you to call the official support number located on your physical bank card, without providing external links.",
+        link: "None (Call verified number on card)"
+      },
+      {
+        id: 31,
+        category: "SOCIAL",
+        difficulty: "hard",
+        isPhishing: true,
+        subject: "{NAME} sent you an urgent corporate message on LinkedIn",
+        sender: "messaging-noreply-services-{CODE}@linkedin-jobs-processing-recruitment.com",
+        body: "Hi there,<br><br>{NAME} (Senior Technical Talent Advisor) has viewed your professional profile and submitted an urgent job offer with an estimated salary package of £75,000.<br><br>To open and review the digital contract agreement, please authenticate your LinkedIn session:<br><br><a class='game-link' data-link='https://linkedin-career-portal-apply.com/auth'>https://linkedin-career-portal-apply.com/auth</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Leverages professional career curiosity. 2) Sender's domain uses a lookalike extension (linkedin-jobs-processing-recruitment.com) instead of the official linkedin.com domain.",
+        link: "https://linkedin-career-portal-apply.com/auth"
+      },
+      {
+        id: 32,
+        category: "SOCIAL",
+        difficulty: "hard",
+        isPhishing: false,
+        subject: "{NAME} wants to connect with you on LinkedIn",
+        sender: "messages-noreply@linkedin.com",
+        body: "Hi there,<br><br>{NAME} (Cybersecurity Architect) has sent you a connection request on LinkedIn.<br><br>Review and accept this professional invitation by logging into your account directly via:<br><br><a class='game-link' data-link='https://www.linkedin.com/in/cyber-connection-request'>https://www.linkedin.com/in/cyber-connection-request</a>",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official and verified LinkedIn system domain (messages-noreply@linkedin.com). 2) The link target points directly to the genuine, authenticated linkedin.com domain.",
+        link: "https://www.linkedin.com/in/cyber-connection-request"
+      },
+      {
+        id: 33,
+        category: "UNIVERSITY",
+        difficulty: "hard",
+        isPhishing: true,
+        subject: "Student Finance England Audit: Discrepancy registered in tuition balance",
+        sender: "repayments-administration-team@{CODE}-student-finance-england-services.com",
+        body: "Attention Student,<br><br>A verification discrepancy was identified during our annual audit of your Student Loans Company allocation. We have temporarily suspended further maintenance loan payments for the upcoming term.<br><br>You must submit your matching identity documents to prevent cancellation of your student loan:<br><br><a class='game-link' data-link='https://student-finance-england-portal-audit.com/verify'>https://student-finance-england-portal-audit.com/verify</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Threatens financial hardship (suspension of loan payments). 2) Targets students using a lookalike domain (.com) instead of the official 'gov.uk' portals used by student finance.",
+        link: "https://student-finance-england-portal-audit.com/verify"
+      },
+      {
+        id: 34,
+        category: "UNIVERSITY",
+        difficulty: "hard",
+        isPhishing: false,
+        subject: "Tuition Fee Allocation approved by Student Loans Company",
+        sender: "finance@{DOMAIN}",
+        body: "Dear Student,<br><br>We are pleased to confirm that your tuition fee funding for this academic year has been approved and processed directly by the Student Loans Company.<br><br>The tuition amount of {AMOUNT} has been successfully credited to your academic balance. You can review your verified registration fees on your university portal dashboard. No further action is required.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official university (.ac.uk) billing domain. 2) Contains no external links, demands for personal credentials, or high-pressure timelines.",
+        link: "None"
+      },
+      {
+        id: 35,
+        category: "WORKPLACE",
+        difficulty: "hard",
+        isPhishing: true,
+        subject: "ACTION REQUIRED: Your OneDrive Storage allocation has expired",
+        sender: "cloud-storage-limits-department@{CODE}-microsoft-onedrive-cloud-management.com",
+        body: "Warning,<br><br>Your active OneDrive cloud workspace has exceeded its allocated data limit of 1 TB. We have suspended sync capabilities for your business emails and cloud documents.<br><br>To reactivate storage operations and retain files, please upgrade your storage space immediately:<br><br><a class='game-link' data-link='https://microsoft-onedrive-storage-upgrade.com/billing'>https://microsoft-onedrive-storage-upgrade.com/billing</a>",
+        explanation: "Phishing Attempt. Indicators: 1) Threat of data loss to cause anxiety. 2) The sender and hyperlinked destination point to lookalike domains (microsoft-onedrive-cloud-management.com) instead of microsoft.com or live.com.",
+        link: "https://microsoft-onedrive-storage-upgrade.com/billing"
+      },
+      {
+        id: 36,
+        category: "WORKPLACE",
+        difficulty: "hard",
+        isPhishing: false,
+        subject: "IT Notice: Your login security key will expire in 14 days",
+        sender: "it-admin-noreply@microsoft.com",
+        body: "Dear Employee,<br><br>This is an automated notification from Active Directory. Your active corporate network security key will expire in 14 days.<br><br>To reset your key and prevent access lockout, please press <strong>Ctrl+Alt+Del</strong> on your company-issued laptop to update your login password. Our IT operations department does not provide direct web links to reset login keys.",
+        explanation: "Legitimate Communication. Safety Indicators: 1) Sent from the official provider domain. 2) Explicitly advises using the local OS security command (Ctrl+Alt+Del) on corporate hardware rather than requesting password entry via a web link.",
+        link: "None (Local OS update requested)"
+      }
+    ];
+
+    // Core Game Mechanics and States [5, 6, 7, 8, 10]
+    const game = {
+      questions: [],
+      currentIndex: 0,
+      score: 0,
+      totalPhishCorrect: 0,
+      totalLegitCorrect: 0,
+      totalPhishEncountered: 0,
+      totalLegitEncountered: 0,
+      questionsCount: 10,
+      difficulty: "easy",
+
+      start() {
+        // Retrieve selected difficulty
+        const selectedBtn = document.querySelector('.btn-diff.selected');
+        this.difficulty = selectedBtn ? selectedBtn.getAttribute('data-diff') : 'easy';
+
+        this.score = 0;
+        this.currentIndex = 0;
+        this.totalPhishCorrect = 0;
+        this.totalLegitCorrect = 0;
+        this.totalPhishEncountered = 0;
+        this.totalLegitEncountered = 0;
+
+        // Populate and filter questions [5, 8]
+        this.questions = this.compileQuestionPool();
+        
+        document.getElementById('screen-welcome').style.display = 'none';
+        document.getElementById('screen-summary').style.display = 'none';
+        document.getElementById('screen-game').style.display = 'block';
+
+        this.renderQuestion();
+      },
+
+      // Dynamic Compilation & Randomization Engine [10]
+      compileQuestionPool() {
+        // Filter blueprints based on difficulty [8]
+        let pool = [...BLUEPRINTS];
+        if (this.difficulty !== "mixed") {
+          pool = pool.filter(b => b.difficulty === this.difficulty);
+        }
+
+        // Shuffle filtered blueprints and slice to 10
+        pool.sort(() => Math.random() - 0.5);
+        const selectedBlueprints = pool.slice(0, this.questionsCount);
+
+        // Variables for Dynamic Randomization Engine [10]
+        const FIRST_NAMES = ["Oliver", "George", "Arthur", "Muhammad", "Leo", "Harry", "Oscar", "Olivia", "Amelia", "Isla", "Ava", "Ivy"];
+        const LAST_NAMES = ["Smith", "Jones", "Taylor", "Brown", "Williams", "Wilson", "Johnson", "Davies", "Patel", "Wright"];
+        const LOCATIONS = ["London, UK", "Manchester, UK", "Birmingham, UK", "Leeds, UK", "Glasgow, UK", "Edinburgh, UK", "Bristol, UK", "Cardiff, UK"];
+        const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+        return selectedBlueprints.map(blueprint => {
+          // Select randomized organization from category list [3]
+          const orgList = ORGS[blueprint.category];
+          const chosenOrg = orgList[Math.floor(Math.random() * orgList.length)];
+
+          // Generate dynamic details [10]
+          const randFirstName = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+          const randLastName = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
+          const fullName = `${randFirstName} ${randLastName}`;
+          
+          const amountValue = "£" + (Math.random() * 150 + 5.50).toFixed(2);
+          const verificationCode = Math.floor(100000 + Math.random() * 900000);
+          const locationName = LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)];
+          
+          // Generate tracking patterns
+          const trackingNumber = "GB-" + Math.floor(100000 + Math.random() * 900000) + "-UK";
+          const ipAddress = `192.168.${Math.floor(Math.random() * 254) + 1}.${Math.floor(Math.random() * 254) + 1}`;
+
+          // Format relative dates and times
+          const currentDateObj = new Date();
+          const formattedDate = currentDateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+          const formattedTime = currentDateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + " BST";
+          const currentMonthName = `${MONTHS[currentDateObj.getMonth()]} ${currentDateObj.getFullYear()}`;
+
+          const lowerCaseOrg = chosenOrg.name.toLowerCase().replace(/\s+/g, '');
+
+          // Replace placeholder strings with compiled variables
+          const applyTokens = (text) => {
+            if (!text) return "";
+            return text
+              .replaceAll("{ENTITY}", chosenOrg.name)
+              .replaceAll("{DOMAIN}", chosenOrg.domain)
+              .replaceAll("{ENTITY_LOWERCASE}", lowerCaseOrg)
+              .replaceAll("{TRACKING}", trackingNumber)
+              .replaceAll("{CODE}", verificationCode)
+              .replaceAll("{AMOUNT}", amountValue)
+              .replaceAll("{LOCATION}", locationName)
+              .replaceAll("{DATE}", formattedDate)
+              .replaceAll("{TIME}", formattedTime)
+              .replaceAll("{NAME}", fullName)
+              .replaceAll("{PAYROLL_MONTH}", currentMonthName)
+              .replaceAll("{IP}", ipAddress);
+          };
+
+          return {
+            category: blueprint.category,
+            difficulty: blueprint.difficulty,
+            isPhishing: blueprint.isPhishing,
+            subject: applyTokens(blueprint.subject),
+            sender: applyTokens(blueprint.sender),
+            body: applyTokens(blueprint.body),
+            explanation: applyTokens(blueprint.explanation),
+            link: applyTokens(blueprint.link)
+          };
+        });
+      },
+
+      renderQuestion() {
+        const q = this.questions[this.currentIndex];
+
+        // Track totals for the session [7]
+        if (q.isPhishing) {
+          this.totalPhishEncountered++;
+        } else {
+          this.totalLegitEncountered++;
+        }
+
+        // Update Progress Label [9]
+        document.getElementById('label-progress').innerText = `SCENARIO ${this.currentIndex + 1} OF ${this.questionsCount}`;
+        document.getElementById('label-score').innerText = `SCORE: ${this.score}/${this.currentIndex}`;
+        
+        // Progress Bar
+        const progressPercentage = (this.currentIndex / this.questionsCount) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+
+        // Render Category Badge [9]
+        const catBadge = document.getElementById('label-category');
+        catBadge.innerText = q.category === 'SOCIAL' ? 'SOCIAL MEDIA' : q.category;
+        catBadge.className = 'category-badge'; 
+        catBadge.classList.add(`cat-${q.category.toLowerCase()}`);
+
+        // Update Difficulty Tag
+        const diffBadge = document.getElementById('email-difficulty-badge');
+        diffBadge.innerText = q.difficulty.toUpperCase();
+        if (q.difficulty === 'easy') {
+          diffBadge.style.color = 'var(--neon-green)';
+          diffBadge.style.borderColor = 'rgba(0, 255, 102, 0.2)';
+        } else if (q.difficulty === 'medium') {
+          diffBadge.style.color = 'var(--neon-cyan)';
+          diffBadge.style.borderColor = 'rgba(0, 240, 255, 0.2)';
+        } else {
+          diffBadge.style.color = 'var(--neon-red)';
+          diffBadge.style.borderColor = 'rgba(255, 0, 85, 0.2)';
+        }
+
+        // Populating Email Simulator fields [6]
+        document.getElementById('email-sender').innerText = q.sender;
+        document.getElementById('email-subject').innerText = q.subject;
+        document.getElementById('email-body').innerHTML = q.body;
+        document.getElementById('inspector-url').innerText = q.link;
+
+        // Reset Interface Controls
+        document.getElementById('btn-choice-legit').disabled = false;
+        document.getElementById('btn-choice-phish').disabled = false;
+        document.getElementById('feedback-panel').style.display = 'none';
+      },
+
+      submitAnswer(userSelectedPhishing) {
+        document.getElementById('btn-choice-legit').disabled = true;
+        document.getElementById('btn-choice-phish').disabled = true;
+
+        const currentQ = this.questions[this.currentIndex];
+        const answeredCorrectly = (userSelectedPhishing === currentQ.isPhishing);
+
+        if (answeredCorrectly) {
+          this.score++;
+          if (currentQ.isPhishing) {
+            this.totalPhishCorrect++;
+          } else {
+            this.totalLegitCorrect++;
+          }
+        }
+
+        // Configure Assessment Panel
+        const feedbackPanel = document.getElementById('feedback-panel');
+        const feedbackTitle = document.getElementById('feedback-title');
+        const feedbackDesc = document.getElementById('feedback-desc');
+
+        feedbackPanel.className = answeredCorrectly ? 'feedback-panel feedback-correct clearfix' : 'feedback-panel feedback-incorrect clearfix';
+        
+        if (answeredCorrectly) {
+          feedbackTitle.innerText = "✓ Assessment: Operational Integrity Maintained";
+          feedbackTitle.className = "feedback-title correct";
+        } else {
+          feedbackTitle.innerText = "✗ Assessment: Cyber Incident Triggered";
+          feedbackTitle.className = "feedback-title incorrect";
+        }
+
+        feedbackDesc.innerHTML = `<strong>Actual State:</strong> ${currentQ.isPhishing ? 'Deceptive Phishing Lure' : 'Legitimate Corporate Communication'}<br><br>${currentQ.explanation}`;
+        feedbackPanel.style.display = 'block';
+
+        document.getElementById('label-score').innerText = `SCORE: ${this.score}/${this.currentIndex + 1}`;
+      },
+
+      nextQuestion() {
+        this.currentIndex++;
+        if (this.currentIndex < this.questionsCount) {
+          this.renderQuestion();
+        } else {
+          this.showEndScreen();
+        }
+      },
+
+      showEndScreen() {
+        document.getElementById('screen-game').style.display = 'none';
+        
+        const summaryScore = document.getElementById('summary-score');
+        const summaryRating = document.getElementById('summary-rating');
+        const summaryDesc = document.getElementById('summary-description');
+        
+        summaryScore.innerText = `${this.score} / ${this.questionsCount}`;
+
+        // Tabulate metrics [7]
+        document.getElementById('stat-legit').innerText = `${this.totalLegitCorrect} / ${this.totalLegitEncountered}`;
+        document.getElementById('stat-phish').innerText = `${this.totalPhishCorrect} / ${this.totalPhishEncountered}`;
+        
+        const accuracyPct = ((this.score / this.questionsCount) * 100).toFixed(1);
+        document.getElementById('stat-accuracy').innerText = `${accuracyPct}%`;
+
+        // Rating threshold evaluation
+        if (this.score <= 3) {
+          summaryRating.innerText = "Beginner";
+          summaryRating.className = "rating-banner rating-beginner";
+          summaryDesc.innerText = "Your detection capability requires improvement. You might be vulnerable to modern social engineering. Open the Intelligence Briefing to study common threat indicators.";
+        } else if (this.score <= 6) {
+          summaryRating.innerText = "Safe User";
+          summaryRating.className = "rating-banner rating-safe";
+          summaryDesc.innerText = "You have basic cybersecurity awareness. You are capable of spotting obvious deceptive markers, but sophisticated spear-phishing or lookalike domains can still deceive you.";
+        } else if (this.score <= 8) {
+          summaryRating.innerText = "Cyber Aware";
+          summaryRating.className = "rating-banner rating-aware";
+          summaryDesc.innerText = "Great job! You possess a strong understanding of cybersecurity controls. You successfully inspect domain spaces, reject coercive urgency, and isolate spoofing attempts.";
+        } else {
+          summaryRating.innerText = "Security Expert";
+          summaryRating.className = "rating-banner rating-expert";
+          summaryDesc.innerText = "Excellent performance! Your analytical skills are aligned with cybersecurity standards. You maintained operational integrity across all dynamic simulation tests.";
+        }
+
+        document.getElementById('screen-summary').style.display = 'block';
+      }
+    };
+
+    // User Interface State Controller [11]
+    const ui = {
+      init() {
+        // Handle difficulty configuration selections
+        const diffButtons = document.querySelectorAll('.btn-diff');
+        diffButtons.forEach(btn => {
+          btn.addEventListener('click', function() {
+            diffButtons.forEach(b => b.classList.remove('selected'));
+            this.classList.add('selected');
+          });
+        });
+      },
+
+      toggleInfoModal(open) {
+        const modal = document.getElementById('info-modal');
+        modal.style.display = open ? 'flex' : 'none';
+      }
+    };
+
+    // Run UI Initializations on startup
+    ui.init();
+  </script>
+</body>
+</html>
