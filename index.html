@@ -819,13 +819,13 @@
           </svg>
         </div>
         <h2 class="overlay-title">Analysis Completed</h2>
-        <p class="overlay-desc">Operational safety parameters processed.</p>
+        <p class="overlay-desc" style="margin-bottom: 10px;">Operational safety parameters processed.</p>
         
         <div class="final-score-display" id="summary-score">0 / 10</div>
         <div class="rating-banner" id="summary-rating">SECURITY EXPERT</div>
         
         <!-- Detailed feedback evaluation description -->
-        <p class="overlay-desc" id="summary-description" style="margin-bottom: 20px; font-size: 0.9rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;"></p>
+        <p class="overlay-desc" id="summary-description" style="margin-bottom: 25px; font-size: 0.9rem; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6; color: #94a3b8;"></p>
         
         <!-- Tabular Game Session Stats [7] -->
         <div class="stat-box">
@@ -844,7 +844,7 @@
         </div>
         
         <button class="btn-restart" onclick="game.start()">Re-initialize Cycle</button>
-      </div>
+      </div> <!-- Closed screen-summary -->
     </main>
 
     <!-- Info/Intelligence Modal [11] -->
@@ -1536,41 +1536,74 @@
       },
 
       showEndScreen() {
-        document.getElementById('screen-game').style.display = 'none';
-        
-        const summaryScore = document.getElementById('summary-score');
-        const summaryRating = document.getElementById('summary-rating');
-        const summaryDesc = document.getElementById('summary-description');
-        
-        summaryScore.innerText = `${this.score} / ${this.questionsCount}`;
+        try {
+          // 1. Instantly update panel states to prevent blank displays under any error conditions
+          document.getElementById('screen-game').style.display = 'none';
+          document.getElementById('screen-summary').style.display = 'block';
 
-        // Tabulate metrics [7]
-        document.getElementById('stat-legit').innerText = `${this.totalLegitCorrect} / ${this.totalLegitEncountered}`;
-        document.getElementById('stat-phish').innerText = `${this.totalPhishCorrect} / ${this.totalPhishEncountered}`;
-        
-        const accuracyPct = ((this.score / this.questionsCount) * 100).toFixed(1);
-        document.getElementById('stat-accuracy').innerText = `${accuracyPct}%`;
+          // Failsafe text updater helper function
+          const safeWriteText = (id, val) => {
+            const target = document.getElementById(id);
+            if (target) {
+              target.innerText = val;
+            } else {
+              console.warn(`Element with ID "${id}" was not resolved in the DOM.`);
+            }
+          };
 
-        // Rating threshold evaluation
-        if (this.score <= 3) {
-          summaryRating.innerText = "Beginner";
-          summaryRating.className = "rating-banner rating-beginner";
-          summaryDesc.innerText = "Your detection capability requires improvement. You might be vulnerable to modern social engineering. Open the Intelligence Briefing to study common threat indicators.";
-        } else if (this.score <= 6) {
-          summaryRating.innerText = "Safe User";
-          summaryRating.className = "rating-banner rating-safe";
-          summaryDesc.innerText = "You have basic cybersecurity awareness. You are capable of spotting obvious deceptive markers, but sophisticated spear-phishing or lookalike domains can still deceive you.";
-        } else if (this.score <= 8) {
-          summaryRating.innerText = "Cyber Aware";
-          summaryRating.className = "rating-banner rating-aware";
-          summaryDesc.innerText = "Great job! You possess a strong understanding of cybersecurity controls. You successfully inspect domain spaces, reject coercive urgency, and isolate spoofing attempts.";
-        } else {
-          summaryRating.innerText = "Security Expert";
-          summaryRating.className = "rating-banner rating-expert";
-          summaryDesc.innerText = "Excellent performance! Your analytical skills are aligned with cybersecurity standards. You maintained operational integrity across all dynamic simulation tests.";
+          // 2. Tabulate scores defensively
+          const scoreVal = typeof this.score === 'number' ? this.score : 0;
+          const totalQ = this.questionsCount || 10;
+          safeWriteText('summary-score', `${scoreVal} / ${totalQ}`);
+
+          // 3. Tabulate stats
+          const legitCorrect = this.totalLegitCorrect || 0;
+          const legitTotal = this.totalLegitEncountered || 0;
+          const phishCorrect = this.totalPhishCorrect || 0;
+          const phishTotal = this.totalPhishEncountered || 0;
+
+          safeWriteText('stat-legit', `${legitCorrect} / ${legitTotal}`);
+          safeWriteText('stat-phish', `${phishCorrect} / ${phishTotal}`);
+
+          const accuracyVal = totalQ > 0 ? ((scoreVal / totalQ) * 100).toFixed(1) : "0.0";
+          safeWriteText('stat-accuracy', `${accuracyVal}%`);
+
+          // 4. Update rating and evaluation feedback descriptions
+          const ratingEl = document.getElementById('summary-rating');
+          const descEl = document.getElementById('summary-description');
+
+          if (ratingEl && descEl) {
+            if (scoreVal <= 3) {
+              ratingEl.innerText = "Beginner";
+              ratingEl.className = "rating-banner rating-beginner";
+              descEl.innerText = "Your detection capability requires improvement. You might be vulnerable to modern social engineering. Open the Intelligence Briefing to study common threat indicators.";
+            } else if (scoreVal <= 6) {
+              ratingEl.innerText = "Safe User";
+              ratingEl.className = "rating-banner rating-safe";
+              descEl.innerText = "You have basic cybersecurity awareness. You are capable of spotting obvious deceptive markers, but sophisticated spear-phishing or lookalike domains can still deceive you.";
+            } else if (scoreVal <= 8) {
+              ratingEl.innerText = "Cyber Aware";
+              ratingEl.className = "rating-banner rating-aware";
+              descEl.innerText = "Great job! You possess a strong understanding of cybersecurity controls. You successfully inspect domain spaces, reject coercive urgency, and isolate spoofing attempts.";
+            } else {
+              ratingEl.innerText = "Security Expert";
+              ratingEl.className = "rating-banner rating-expert";
+              descEl.innerText = "Excellent performance! Your analytical skills are aligned with cybersecurity standards. You maintained operational integrity across all dynamic simulation tests.";
+            }
+          }
+        } catch (error) {
+          console.error("Critical error in showEndScreen: ", error);
+          // Gracefully output diagnostic information to user on the interface
+          const summaryContainer = document.getElementById('screen-summary');
+          if (summaryContainer) {
+            summaryContainer.innerHTML = `
+              <h2 style="color: var(--neon-red); margin-bottom: 15px;">System Diagnostic Error</h2>
+              <p style="color: var(--text-main); margin-bottom: 20px;">The analysis reporter encountered an unexpected execution error.</p>
+              <pre style="background: #1e1e2f; color: #ff5555; padding: 15px; border-radius: 6px; text-align: left; overflow-x: auto; font-size: 0.8rem;">${error.stack || error}</pre>
+              <button class="btn-restart" style="margin-top: 20px;" onclick="game.start()">Re-initialize Cycle</button>
+            `;
+          }
         }
-
-        document.getElementById('screen-summary').style.display = 'block';
       }
     };
 
